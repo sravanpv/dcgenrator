@@ -1,0 +1,125 @@
+<project name="Web Application" default="package" basedir=".">	
+    <target name="init">
+        <tstamp/>
+    </target>
+    <target name="clean" description="Deletes the Web Application's war directory and web archive file">
+        <echo message="Deleting ${app.name}'s war directory and web archive file ..."/>
+        <delete dir="${basedir}/classes"/>
+    </target>
+    <target name="prepare" description="Creates the Web Application's war directory" depends="clean,init">
+        <echo message="Creating ${app.name}'s war directory ..."/>
+        <mkdir dir="${basedir}/classes"/>
+    </target>
+    <target name="build" description="Builds the Web Application" depends="prepare">
+        <echo message="Building ${app.name} ..."/>
+        <javac srcdir="${basedir}/src" destdir="${basedir}/classes">
+            <include name="**/*.java"/>
+        </javac>    
+    </target>
+
+	<path id="pmd.classpath">
+		<fileset dir="C:\pmd\pmd-4.2.5\lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+
+	<target name="pmd">
+	<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+		<echo message="Executing PMD Task, Report will be at ${basedir}/pmd_report.html"/>
+		<pmd shortFilenames="true">
+			<ruleset>rulesets/favorites.xml</ruleset>
+			<ruleset>basic</ruleset>
+			<formatter type="html" toFile="pmd_report.html" linkPrefix="http://pmd.sourceforge.net/xref/"/>
+			<fileset dir="${basedir}/src">
+				<include name="**/*.java"/>
+			</fileset>
+		</pmd>
+	
+	
+		<echo message="Executing PMD Task For a more Cool HTML, Report will be at ${basedir}/pmd_report.html"/>
+		<pmd shortFilenames="true">
+			<ruleset>rulesets/favorites.xml</ruleset>
+			<ruleset>basic</ruleset>
+			<formatter type="xml" toFile="report_pmd_cool.xml"/>
+			<fileset dir="${basedir}/src">
+				<include name="**/*.java"/>
+			</fileset>
+		</pmd>
+		<xslt in="report_pmd_cool.xml" style="C:\pmd\pmd-4.2.5\etc\xslt\wz-pmd-report.xslt" out="report_pmd_cool.html" />
+	</target>
+
+	<target name="checkstyle">
+	<echo message="Executing CHECKSTYLE , Report will be at ${basedir}/checkstyle_report.html"/>
+	<!-- <taskdef resource="checkstyletask.properties" classpath="C:\pmd\checkstyle-5.3\checkstyle-5.3-all.jar"/> -->
+	<taskdef resource="checkstyletask.properties" classpath="C:\pmd\checkstyle-5.3\checkstyle-5.3-all.jar"/>
+	<checkstyle config="C:\pmd\checkstyle-5.3\sun_checks.xml" failOnViolation="false">
+    <formatter type="xml" tofile="checkstyle_report.xml"/>
+    <fileset dir="${basedir}/src">
+				<include name="**/*.java"/>
+	</fileset>
+    </checkstyle>
+    <xslt in="checkstyle_report.xml" out="checkstyle_report.html" style="C:\pmd\checkstyle-5.3\contrib\checkstyle.xsl"/>
+	</target>
+
+	<path id="findbugs.classpath">
+		<fileset dir="C:\pmd\findbugs-1.3.9\lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+
+
+	<target name="findbugs">
+	<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpathref="findbugs.classpath"/>
+		<echo message="Executing Findbugs Task, Report will be at ${basedir}/fb_report.html"/>
+
+		<findbugs home="C:\pmd\findbugs-1.3.9"
+              output="xml:withMessages"
+              outputFile="fb_report.xml" >
+		     <sourcePath path="${basedir}/src" />
+			<class location="C:\pmd\findbugs-1.3.9\lib\bcel.jar" />
+		</findbugs>
+	 <xslt in="fb_report.xml" out="fb_report.html" style="C:\pmd\findbugs-1.3.9\src\xsl\default.xsl"/>	
+	</target>
+
+	<taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+    <classpath path="C:\pmd\sonar-2.8\lib" />
+	</taskdef>
+
+	<target name="sonar">
+    <!-- The workDir directory is used by Sonar to store temporary files -->
+    <sonar:sonar workDir="${basedir}" key="org.example:example" version="0.1-SNAPSHOT" xmlns:sonar="antlib:org.sonar.ant">
+
+      <!-- source directories (required) -->
+      <sources>
+        <path location="${basedir}/src" />
+      </sources>
+
+     <!-- test source directories (optional) -->
+      <tests>
+        <path location="${basedir}/src/AppTest.java" />
+      </tests>
+
+	  <libraries>
+        <path location="C:\pmd\pmd-4.2.5\lib\*.jar" />
+      </libraries>
+
+      </sonar:sonar>
+  </target>
+
+
+
+    <target name="package" description="Packages the Web Application's web archive file" depends="build,pmd">
+        <echo message="Packaging ${app.name}'s web archive file ..."/>
+        <war destfile="${basedir}/${app.name}.war" webxml="${basedir}/web/WEB-INF/web.xml">
+            <zipfileset dir="${basedir}/config" prefix="config"/>
+			<zipfileset dir="${basedir}/images" prefix="images"/>
+			<zipfileset dir="${basedir}/js" prefix="js"/>
+			<zipfileset dir="${basedir}/jsp" prefix="jsp"/>
+			<zipfileset dir="${basedir}/styles" prefix="styles"/>
+			<fileset dir="${basedir}/web"/>
+        </war>
+    </target>    
+
+</project>
